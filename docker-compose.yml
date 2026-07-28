@@ -29,6 +29,9 @@ services:
       NODE_ENV: production
       API_PORT: 3000
       DATABASE_URL: postgresql://${POSTGRES_USER:-password_manager}:${POSTGRES_PASSWORD:-change-me}@database:5432/${POSTGRES_DB:-password_manager}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
+      JWT_ACCESS_TTL_SECONDS: ${JWT_ACCESS_TTL_SECONDS:-900}
+      REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS:-30}
     ports:
       - "${API_PORT:-3000}:3000"
     depends_on:
