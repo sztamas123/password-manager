@@ -5,8 +5,11 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { validateEnvironment } from './config/environment';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { EntriesModule } from './modules/entries/entries.module';
+import { FoldersModule } from './modules/folders/folders.module';
 import { HealthModule } from './modules/health/health.module';
 import { UsersModule } from './modules/users/users.module';
+import { VaultsModule } from './modules/vaults/vaults.module';
 
 @Module({
   imports: [
@@ -24,8 +27,11 @@ import { UsersModule } from './modules/users/users.module';
     ]),
     DatabaseModule,
     AuthModule,
+    EntriesModule,
+    FoldersModule,
     HealthModule,
     UsersModule,
+    VaultsModule,
   ],
   providers: [
     {

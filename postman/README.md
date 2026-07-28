@@ -1,0 +1,47 @@
+# Postman
+
+## Import
+
+1. Open Postman.
+2. Select **Import**.
+3. Import `password-manager.postman_collection.json`.
+4. Import `password-manager.postman_environment.json`.
+5. Select **Password Manager Local** from the environment selector.
+
+Start the API before sending requests:
+
+```bash
+docker compose up -d --build
+```
+
+The local environment targets `http://localhost:3001`, matching this
+workspace's ignored `.env`.
+
+## Run
+
+The numbered folders are designed to run in order. Use the collection runner
+to run the whole collection, or open folders and send requests one at a time.
+
+Test scripts automatically save:
+
+- `accessToken`
+- `refreshToken`
+- `vaultId`
+- `folderId`
+- `entryId`
+
+The collection uses a stable `postman@example.com` development account so
+repeated runs do not create a new user each time. Registration accepts either
+`201` on the first run or `409` when the account already exists; login then
+continues the workflow.
+
+To remove that test account and all related data:
+
+```bash
+docker compose exec database \
+  psql -U password_manager -d password_manager \
+  -c "DELETE FROM users WHERE email = 'postman@example.com';"
+```
+
+Do not replace the example entry with real credentials. Entry data remains
+plaintext until client-side encryption is implemented.

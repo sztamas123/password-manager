@@ -21,6 +21,6 @@ import { TokenService } from './token.service';
   ],
   controllers: [AuthController],
   providers: [AccessTokenGuard, AuthService, PasswordService, TokenService],
-  exports: [AccessTokenGuard],
+  exports: [AccessTokenGuard, JwtModule],
 })
 export class AuthModule {}

@@ -1,7 +1,6 @@
 # Password Manager
 
-A self-hosted password manager built incrementally according to
-[`CODEX.md`](./CODEX.md).
+
 
 ## Implemented
 
@@ -15,11 +14,14 @@ The backend currently includes:
 - short-lived JWT access tokens;
 - rotating, hashed refresh tokens with replay-family revocation;
 - rate limiting on authentication endpoints;
+- authenticated, owner-scoped vault, folder, and entry CRUD;
 - Docker images for the API and PostgreSQL;
 - unit tests, linting, and formatting.
 
-Vault data and client-side encryption belong to later phases and are
-intentionally not implemented.
+> [!WARNING]
+> Entry fields are plaintext during the current architecture phase. The API
+> server and PostgreSQL can read `username`, `password`, `url`, and `notes`.
+> Never store real credentials until client-side encryption is implemented.
 
 ## Start with Docker
 
@@ -79,6 +81,84 @@ Register, login, and refresh return a 15-minute JWT access token and a rotating
 refresh token. Every successful refresh invalidates the submitted token and
 returns a new one.
 
+## Vault API
+
+All vault routes require the access token returned by register or login:
+
+```text
+Authorization: Bearer ACCESS_TOKEN
+```
+
+Vault routes:
+
+```text
+POST   /vaults
+GET    /vaults
+GET    /vaults/:vaultId
+PATCH  /vaults/:vaultId
+DELETE /vaults/:vaultId
+```
+
+Folder routes:
+
+```text
+POST   /vaults/:vaultId/folders
+GET    /vaults/:vaultId/folders
+GET    /vaults/:vaultId/folders/:folderId
+PATCH  /vaults/:vaultId/folders/:folderId
+DELETE /vaults/:vaultId/folders/:folderId
+```
+
+Entry routes:
+
+```text
+POST   /vaults/:vaultId/entries
+GET    /vaults/:vaultId/entries
+GET    /vaults/:vaultId/entries/:entryId
+PATCH  /vaults/:vaultId/entries/:entryId
+DELETE /vaults/:vaultId/entries/:entryId
+```
+
+Example vault request:
+
+```bash
+curl --request POST http://localhost:3000/vaults \
+  --header "Authorization: Bearer ACCESS_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{"name":"Personal"}'
+```
+
+Example entry request:
+
+```bash
+curl --request POST http://localhost:3000/vaults/VAULT_ID/entries \
+  --header "Authorization: Bearer ACCESS_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name":"Example",
+    "username":"user@example.com",
+    "password":"development-only-value",
+    "url":"https://example.com",
+    "folderId":"OPTIONAL_FOLDER_ID"
+  }'
+```
+
+Every database query is scoped to the authenticated owner. Requests for
+another user’s vault resources return `404`. Deleting a folder leaves its
+entries in the vault with `folderId: null`; deleting a vault cascades to its
+folders and entries.
+
+## Postman collection
+
+Import both files from [`postman/`](./postman):
+
+- `password-manager.postman_collection.json`
+- `password-manager.postman_environment.json`
+
+Select the **Password Manager Local** environment and run the numbered folders
+in order. The collection captures access tokens and resource IDs
+automatically. See [`postman/README.md`](./postman/README.md) for details.
+
 ## Authentication security
 
 - Passwords are hashed with Argon2id using 19 MiB of memory, two iterations,
@@ -97,6 +177,9 @@ returns a new one.
 - Production deployments must use TLS and a secret manager. The authentication
   password introduced here is separate from the future client-side vault
   encryption key.
+- The current plaintext entry model intentionally implements CRUD before the
+  client-side encryption phase. It does not satisfy the final zero-knowledge
+  security model and must be treated as development-only.
 
 ## Local backend development
 
@@ -132,8 +215,11 @@ npm --prefix backend run build
 │   │   ├── generated/
 │   │   └── modules/
 │   │       ├── auth/
+│   │       ├── entries/
+│   │       ├── folders/
 │   │       ├── health/
-│   │       └── users/
+│   │       ├── users/
+│   │       └── vaults/
 │   └── test/
 ├── .env.example
 ├── docker-compose.yml
