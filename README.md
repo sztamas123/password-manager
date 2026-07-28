@@ -3,18 +3,65 @@
 A self-hosted password manager built incrementally according to
 [`CODEX.md`](./CODEX.md).
 
-## Current scope
+## Phase 1
 
-Phase 1 is limited to the backend foundation:
+The backend foundation includes:
 
-- NestJS API
-- Prisma and PostgreSQL
-- Docker-based local infrastructure
-- Health module
-- Users module
+- a NestJS API with validated environment configuration;
+- Prisma ORM backed by PostgreSQL;
+- a database-aware `GET /health` endpoint;
+- an initial `User` model containing identity metadata only;
+- Docker images for the API and PostgreSQL;
+- unit tests, linting, and formatting.
 
-Only the project scaffold exists for now. Application logic, database models,
-endpoints, and dependency installation are intentionally deferred.
+Authentication, password hashing, vault data, and encryption belong to later
+phases and are intentionally not implemented.
+
+## Start with Docker
+
+Create the local environment file and start the stack:
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+The health endpoint is available at <http://localhost:3000/health>.
+
+Apply database migrations in another terminal:
+
+```bash
+docker compose exec api npm run prisma:migrate:deploy
+```
+
+Stop the stack with:
+
+```bash
+docker compose down
+```
+
+The PostgreSQL data volume is retained between runs.
+
+## Local backend development
+
+Start PostgreSQL, install backend dependencies, migrate the database, and run
+the API:
+
+```bash
+cp .env.example .env
+docker compose up -d database
+npm --prefix backend install
+npm --prefix backend run prisma:migrate:dev
+npm --prefix backend run start:dev
+```
+
+Useful verification commands:
+
+```bash
+npm --prefix backend run lint
+npm --prefix backend test
+npm --prefix backend run build
+```
 
 ## Structure
 
@@ -24,18 +71,14 @@ endpoints, and dependency installation are intentionally deferred.
 │   ├── prisma/
 │   │   └── migrations/
 │   ├── src/
-│   │   ├── common/
 │   │   ├── config/
 │   │   ├── database/
+│   │   ├── generated/
 │   │   └── modules/
 │   │       ├── health/
 │   │       └── users/
 │   └── test/
-├── infrastructure/
-│   └── docker/
-│       └── postgres/
 ├── .env.example
 ├── docker-compose.yml
 └── CODEX.md
 ```
-

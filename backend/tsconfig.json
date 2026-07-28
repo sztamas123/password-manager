@@ -1,11 +1,19 @@
 {
   "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "incremental": true,
     "module": "commonjs",
-    "target": "ES2022",
-    "strict": true,
-    "sourceMap": true,
+    "moduleResolution": "node",
     "outDir": "./dist",
-    "baseUrl": "./"
+    "baseUrl": "./",
+    "removeComments": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "ES2023"
   }
 }
-
