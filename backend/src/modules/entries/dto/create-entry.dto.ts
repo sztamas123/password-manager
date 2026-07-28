@@ -1,40 +1,23 @@
-import { Transform, type TransformFnParams } from 'class-transformer';
 import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   MaxLength,
-  MinLength,
 } from 'class-validator';
+import {
+  ENCRYPTED_DATA_PATTERN,
+  MAX_ENCRYPTED_DATA_LENGTH,
+} from '../../encryption/encrypted-data.validation';
 
 export class CreateEntryDto {
-  @Transform(({ value }: TransformFnParams) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
-  @IsString()
-  @MinLength(1)
-  @MaxLength(200)
-  name!: string;
+  @IsUUID()
+  id!: string;
 
-  @IsOptional()
   @IsString()
-  @MaxLength(1_000)
-  username?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(4_096)
-  password?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(2_048)
-  url?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(20_000)
-  notes?: string;
+  @Matches(ENCRYPTED_DATA_PATTERN)
+  @MaxLength(MAX_ENCRYPTED_DATA_LENGTH)
+  encryptedData!: string;
 
   @IsOptional()
   @IsUUID()

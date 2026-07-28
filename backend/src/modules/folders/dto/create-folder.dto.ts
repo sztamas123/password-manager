@@ -1,12 +1,15 @@
-import { Transform, type TransformFnParams } from 'class-transformer';
-import { IsString, MaxLength, MinLength } from 'class-validator';
+import { IsString, IsUUID, Matches, MaxLength } from 'class-validator';
+import {
+  ENCRYPTED_DATA_PATTERN,
+  MAX_ENCRYPTED_DATA_LENGTH,
+} from '../../encryption/encrypted-data.validation';
 
 export class CreateFolderDto {
-  @Transform(({ value }: TransformFnParams) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @IsUUID()
+  id!: string;
+
   @IsString()
-  @MinLength(1)
-  @MaxLength(200)
-  name!: string;
+  @Matches(ENCRYPTED_DATA_PATTERN)
+  @MaxLength(MAX_ENCRYPTED_DATA_LENGTH)
+  encryptedData!: string;
 }

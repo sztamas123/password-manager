@@ -22,7 +22,9 @@ export class EntriesService {
 
     return this.prisma.entry.create({
       data: {
-        ...input,
+        encryptedData: input.encryptedData,
+        folderId: input.folderId,
+        id: input.id,
         vaultId,
       },
     });

@@ -1,13 +1,12 @@
-import { Transform, type TransformFnParams } from 'class-transformer';
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsString, Matches, MaxLength } from 'class-validator';
+import {
+  ENCRYPTED_DATA_PATTERN,
+  MAX_ENCRYPTED_DATA_LENGTH,
+} from '../../encryption/encrypted-data.validation';
 
 export class UpdateFolderDto {
-  @Transform(({ value }: TransformFnParams) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
-  @IsOptional()
   @IsString()
-  @MinLength(1)
-  @MaxLength(200)
-  name?: string;
+  @Matches(ENCRYPTED_DATA_PATTERN)
+  @MaxLength(MAX_ENCRYPTED_DATA_LENGTH)
+  encryptedData!: string;
 }

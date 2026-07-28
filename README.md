@@ -14,14 +14,17 @@ The backend currently includes:
 - short-lived JWT access tokens;
 - rotating, hashed refresh tokens with replay-family revocation;
 - rate limiting on authentication endpoints;
-- authenticated, owner-scoped vault, folder, and entry CRUD;
+- authenticated, owner-scoped encrypted vault, folder, and entry CRUD;
+- a browser-compatible Argon2id and AES-256-GCM client crypto package;
+- per-user encryption profiles containing only KDF parameters and a wrapped
+  random vault key;
 - Docker images for the API and PostgreSQL;
 - unit tests, linting, and formatting.
 
-> [!WARNING]
-> Entry fields are plaintext during the current architecture phase. The API
-> server and PostgreSQL can read `username`, `password`, `url`, and `notes`.
-> Never store real credentials until client-side encryption is implemented.
+The API and PostgreSQL never receive vault names, usernames, passwords, URLs,
+notes, the master password, or unwrapped encryption keys. They store opaque
+authenticated ciphertext and the metadata needed to organize and synchronize
+it.
 
 ## Start with Docker
 
@@ -119,34 +122,63 @@ PATCH  /vaults/:vaultId/entries/:entryId
 DELETE /vaults/:vaultId/entries/:entryId
 ```
 
-Example vault request:
+Clients generate every resource ID before encryption. That ID is part of the
+AES-GCM authenticated data, so a ciphertext copied to another resource cannot
+be decrypted there. Create and update bodies use this shape:
 
-```bash
-curl --request POST http://localhost:3000/vaults \
-  --header "Authorization: Bearer ACCESS_TOKEN" \
-  --header "Content-Type: application/json" \
-  --data '{"name":"Personal"}'
+```json
+{
+  "id": "CLIENT_GENERATED_UUID",
+  "encryptedData": "pm.v1.BASE64URL_NONCE.BASE64URL_CIPHERTEXT_AND_TAG"
+}
 ```
 
-Example entry request:
+Entries may additionally contain an optional plaintext `folderId`; this is
+structural metadata, not vault content:
 
-```bash
-curl --request POST http://localhost:3000/vaults/VAULT_ID/entries \
-  --header "Authorization: Bearer ACCESS_TOKEN" \
-  --header "Content-Type: application/json" \
-  --data '{
-    "name":"Example",
-    "username":"user@example.com",
-    "password":"development-only-value",
-    "url":"https://example.com",
-    "folderId":"OPTIONAL_FOLDER_ID"
-  }'
+```json
+{
+  "id": "CLIENT_GENERATED_UUID",
+  "encryptedData": "pm.v1.BASE64URL_NONCE.BASE64URL_CIPHERTEXT_AND_TAG",
+  "folderId": "OPTIONAL_FOLDER_UUID"
+}
 ```
 
 Every database query is scoped to the authenticated owner. Requests for
 another user’s vault resources return `404`. Deleting a folder leaves its
 entries in the vault with `folderId: null`; deleting a vault cascades to its
 folders and entries.
+
+## Client-side encryption
+
+The client has two separate password flows:
+
+- the authentication password is sent over TLS to `/auth/register` or
+  `/auth/login` and is hashed by the server;
+- the master password never leaves the client and derives a wrapping key with
+  Argon2id.
+
+On first setup, the client generates a random 256-bit vault key, wraps it with
+the master-password-derived key, and uploads this non-secret profile:
+
+```text
+POST /encryption/profile
+GET  /encryption/profile
+```
+
+The profile contains the Argon2id salt and cost parameters plus the wrapped
+vault key. It does not contain either password or an unwrapped key. The random
+vault key encrypts vault, folder, and entry JSON using AES-256-GCM. Keeping it
+separate from the derived wrapping key permits a future master-password change
+to rewrap one key instead of re-encrypting every item.
+
+The browser-compatible implementation and usage example are in
+[`packages/crypto`](./packages/crypto). To install and test it:
+
+```bash
+npm --prefix packages/crypto install
+npm --prefix packages/crypto test
+```
 
 ## Postman collection
 
@@ -159,10 +191,28 @@ Select the **Password Manager Local** environment and run the numbered folders
 in order. The collection captures access tokens and resource IDs
 automatically. See [`postman/README.md`](./postman/README.md) for details.
 
-## Authentication security
+## Security notes
 
 - Passwords are hashed with Argon2id using 19 MiB of memory, two iterations,
   and one lane. Plaintext passwords are never persisted.
+- The client uses the same conservative Argon2id baseline for master-key
+  derivation. Parameters are stored per account so they can be raised later.
+- Vault data uses AES-256-GCM with a fresh random 96-bit nonce and a 128-bit
+  authentication tag. Authenticated resource context prevents ciphertext from
+  being moved between IDs, types, or vaults without detection.
+- A weak master password remains vulnerable to offline guessing if the
+  database is stolen. Use a long, unique master password; there is deliberately
+  no server-side recovery of a forgotten one.
+- Zero knowledge does not protect an unlocked or malware-compromised client.
+  A compromised frontend deployment could capture the master password, so
+  production clients require HTTPS, a controlled release pipeline, and strong
+  defenses against script injection.
+- JavaScript can overwrite key byte arrays on lock, but cannot guarantee that
+  runtimes have removed every internal copy from memory.
+- The server still learns account IDs, resource IDs, relationships, sizes,
+  timestamps, counts, and access patterns. It can also delete or replay old
+  ciphertext. AES-GCM detects modification, but rollback detection belongs
+  with the later synchronization design.
 - Refresh tokens contain 64 random bytes. Only their SHA-256 hashes are stored,
   because high-entropy random tokens do not need slow password hashing.
 - Reusing a rotated refresh token revokes the active tokens in that token
@@ -174,12 +224,7 @@ automatically. See [`postman/README.md`](./postman/README.md) for details.
 - The built-in rate limiter is in-memory and suitable for the current
   single-instance deployment. A shared store is required before scaling to
   multiple API instances.
-- Production deployments must use TLS and a secret manager. The authentication
-  password introduced here is separate from the future client-side vault
-  encryption key.
-- The current plaintext entry model intentionally implements CRUD before the
-  client-side encryption phase. It does not satisfy the final zero-knowledge
-  security model and must be treated as development-only.
+- Production deployments must use TLS and a secret manager.
 
 ## Local backend development
 
@@ -200,6 +245,7 @@ Useful verification commands:
 npm --prefix backend run lint
 npm --prefix backend test
 npm --prefix backend run build
+npm --prefix packages/crypto test
 ```
 
 ## Structure
@@ -221,6 +267,11 @@ npm --prefix backend run build
 │   │       ├── users/
 │   │       └── vaults/
 │   └── test/
+├── packages/
+│   └── crypto/
+│       ├── src/
+│       └── README.md
+├── postman/
 ├── .env.example
 ├── docker-compose.yml
 └── CODEX.md

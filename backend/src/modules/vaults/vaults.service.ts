@@ -11,7 +11,8 @@ export class VaultsService {
   create(ownerId: string, input: CreateVaultDto): Promise<Vault> {
     return this.prisma.vault.create({
       data: {
-        name: input.name,
+        encryptedData: input.encryptedData,
+        id: input.id,
         ownerId,
       },
     });

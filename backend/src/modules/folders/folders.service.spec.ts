@@ -6,10 +6,11 @@ describe('FoldersService', () => {
   const ownerId = 'bd1f329a-e9f1-4d57-9c23-7b2a0a791e38';
   const vaultId = '6402d42d-895b-4d0f-9f42-5c9fc9a6fb98';
   const folderId = '135ab4ee-8758-46c1-bfba-55e54dfba01f';
+  const encryptedData = 'pm.v1.AAAAAAAAAAAAAAAA.BBBBBBBBBBBBBBBBBBBBBB';
   const folder = {
     createdAt: new Date(),
+    encryptedData,
     id: folderId,
-    name: 'Work',
     updatedAt: new Date(),
     vaultId,
   };
@@ -36,7 +37,7 @@ describe('FoldersService', () => {
     prisma.folder.create.mockResolvedValue(folder);
 
     await expect(
-      service.create(ownerId, vaultId, { name: 'Work' }),
+      service.create(ownerId, vaultId, { encryptedData, id: folderId }),
     ).resolves.toBe(folder);
 
     expect(prisma.vault.findFirst).toHaveBeenCalledWith({
@@ -52,7 +53,7 @@ describe('FoldersService', () => {
     prisma.vault.findFirst.mockResolvedValue(null);
 
     await expect(
-      service.create(ownerId, vaultId, { name: 'Work' }),
+      service.create(ownerId, vaultId, { encryptedData, id: folderId }),
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(prisma.folder.create).not.toHaveBeenCalled();
   });

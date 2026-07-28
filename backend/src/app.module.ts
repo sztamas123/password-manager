@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { validateEnvironment } from './config/environment';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { EncryptionModule } from './modules/encryption/encryption.module';
 import { EntriesModule } from './modules/entries/entries.module';
 import { FoldersModule } from './modules/folders/folders.module';
 import { HealthModule } from './modules/health/health.module';
@@ -27,6 +28,7 @@ import { VaultsModule } from './modules/vaults/vaults.module';
     ]),
     DatabaseModule,
     AuthModule,
+    EncryptionModule,
     EntriesModule,
     FoldersModule,
     HealthModule,

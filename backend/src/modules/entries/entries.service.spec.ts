@@ -7,16 +7,13 @@ describe('EntriesService', () => {
   const vaultId = '6402d42d-895b-4d0f-9f42-5c9fc9a6fb98';
   const folderId = '135ab4ee-8758-46c1-bfba-55e54dfba01f';
   const entryId = 'f9ccba83-3f69-438e-a040-5b1dc135a95f';
+  const encryptedData = 'pm.v1.AAAAAAAAAAAAAAAA.BBBBBBBBBBBBBBBBBBBBBB';
   const entry = {
     createdAt: new Date(),
+    encryptedData,
     folderId,
     id: entryId,
-    name: 'Example',
-    notes: null,
-    password: 'development-only-password',
     updatedAt: new Date(),
-    url: 'https://example.com',
-    username: 'user@example.com',
     vaultId,
   };
   const prisma = {
@@ -47,11 +44,9 @@ describe('EntriesService', () => {
 
     await expect(
       service.create(ownerId, vaultId, {
+        encryptedData,
         folderId,
-        name: 'Example',
-        password: 'development-only-password',
-        url: 'https://example.com',
-        username: 'user@example.com',
+        id: entryId,
       }),
     ).resolves.toBe(entry);
 
@@ -71,8 +66,9 @@ describe('EntriesService', () => {
 
     await expect(
       service.create(ownerId, vaultId, {
+        encryptedData,
         folderId,
-        name: 'Example',
+        id: entryId,
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(prisma.entry.create).not.toHaveBeenCalled();

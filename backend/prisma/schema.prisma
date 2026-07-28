@@ -9,13 +9,14 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid()) @db.Uuid
-  email         String         @unique @db.VarChar(320)
-  passwordHash  String         @map("password_hash")
-  refreshTokens RefreshToken[]
-  vaults        Vault[]
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
+  id                String             @id @default(uuid()) @db.Uuid
+  email             String             @unique @db.VarChar(320)
+  passwordHash      String             @map("password_hash")
+  encryptionProfile EncryptionProfile?
+  refreshTokens     RefreshToken[]
+  vaults            Vault[]
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
 
   @@map("users")
 }
@@ -37,46 +38,58 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+model EncryptionProfile {
+  userId          String   @id @map("user_id") @db.Uuid
+  version         Int
+  kdfAlgorithm    String   @map("kdf_algorithm") @db.VarChar(20)
+  kdfSalt         String   @map("kdf_salt") @db.VarChar(22)
+  kdfMemoryKiB    Int      @map("kdf_memory_kib")
+  kdfIterations   Int      @map("kdf_iterations")
+  kdfParallelism  Int      @map("kdf_parallelism")
+  wrappedVaultKey String   @map("wrapped_vault_key") @db.VarChar(128)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("encryption_profiles")
+}
+
 model Vault {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String   @db.VarChar(200)
-  ownerId   String   @map("owner_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  folders   Folder[]
-  entries   Entry[]
+  id            String   @id @db.Uuid
+  encryptedData String   @map("encrypted_data")
+  ownerId       String   @map("owner_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  folders       Folder[]
+  entries       Entry[]
 
   @@index([ownerId])
   @@map("vaults")
 }
 
 model Folder {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String   @db.VarChar(200)
-  vaultId   String   @map("vault_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  vault     Vault    @relation(fields: [vaultId], references: [id], onDelete: Cascade)
-  entries   Entry[]
+  id            String   @id @db.Uuid
+  encryptedData String   @map("encrypted_data")
+  vaultId       String   @map("vault_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  vault         Vault    @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+  entries       Entry[]
 
   @@index([vaultId])
   @@map("folders")
 }
 
 model Entry {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String   @db.VarChar(200)
-  username  String?
-  password  String?
-  url       String?
-  notes     String?
-  vaultId   String   @map("vault_id") @db.Uuid
-  folderId  String?  @map("folder_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  vault     Vault    @relation(fields: [vaultId], references: [id], onDelete: Cascade)
-  folder    Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  id            String   @id @db.Uuid
+  encryptedData String   @map("encrypted_data")
+  vaultId       String   @map("vault_id") @db.Uuid
+  folderId      String?  @map("folder_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  vault         Vault    @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+  folder        Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
   @@index([vaultId])
   @@index([folderId])

@@ -35,6 +35,16 @@ repeated runs do not create a new user each time. Registration accepts either
 `201` on the first run or `409` when the account already exists; login then
 continues the workflow.
 
+The encryption-profile request accepts `201` on its first run or `409` once the
+profile exists. Vault, folder, and entry requests use client-generated UUIDs
+and opaque `pm.v1` envelopes.
+
+> [!IMPORTANT]
+> The Postman values are format-valid placeholders for testing the API storage
+> contract; they are not cryptographically generated ciphertext. Run
+> `npm --prefix packages/crypto test` to exercise real Argon2id key derivation,
+> AES-256-GCM encryption, decryption, tamper detection, and context binding.
+
 To remove that test account and all related data:
 
 ```bash
@@ -43,5 +53,5 @@ docker compose exec database \
   -c "DELETE FROM users WHERE email = 'postman@example.com';"
 ```
 
-Do not replace the example entry with real credentials. Entry data remains
-plaintext until client-side encryption is implemented.
+Do not place real credentials directly in Postman. A real client must encrypt
+them locally with `packages/crypto` before making an API request.

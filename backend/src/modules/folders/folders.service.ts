@@ -17,7 +17,8 @@ export class FoldersService {
 
     return this.prisma.folder.create({
       data: {
-        name: input.name,
+        encryptedData: input.encryptedData,
+        id: input.id,
         vaultId,
       },
     });
