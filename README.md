@@ -18,7 +18,11 @@ The backend currently includes:
 - a browser-compatible Argon2id and AES-256-GCM client crypto package;
 - per-user encryption profiles containing only KDF parameters and a wrapped
   random vault key;
-- Docker images for the API and PostgreSQL;
+- a responsive React and Tailwind web client with login, registration,
+  master-password setup/unlock, encrypted vault CRUD, local search, and a
+  secure password generator;
+- same-origin API proxying and production browser security headers;
+- Docker images for the web client, API, and PostgreSQL;
 - unit tests, linting, and formatting.
 
 The API and PostgreSQL never receive vault names, usernames, passwords, URLs,
@@ -37,8 +41,9 @@ docker compose up --build
 ```
 
 Paste the generated value into `JWT_SECRET` in `.env` before starting Docker.
-The health endpoint is available at <http://localhost:3000/health> when using
-the example ports. Local overrides in `.env` take precedence.
+The web client is available at <http://localhost:8080> and the health endpoint
+at <http://localhost:3000/health> when using the example ports. Local overrides
+in `.env` take precedence.
 
 Apply database migrations in another terminal:
 
@@ -180,6 +185,34 @@ npm --prefix packages/crypto install
 npm --prefix packages/crypto test
 ```
 
+## Web client
+
+The Phase 5 frontend lives in [`frontend/`](./frontend). It provides:
+
+- registration and login;
+- separate master-password setup and unlock;
+- vault creation, rename, and deletion;
+- folder creation and filtering;
+- encrypted login creation, editing, copying, and deletion;
+- local search over decrypted names, usernames, websites, and notes;
+- a fixed-strength password generator.
+
+The frontend keeps authentication tokens and the unwrapped vault key only in
+memory. A page reload signs the user out by design. During local development,
+Vite proxies `/api` to the backend. The Docker deployment uses an Nginx
+same-origin proxy and does not require permissive CORS.
+
+Run it outside Docker:
+
+```bash
+docker compose up -d database api
+npm --prefix frontend install
+npm --prefix frontend run dev
+```
+
+Open <http://localhost:5173>. See [`frontend/README.md`](./frontend/README.md)
+for the architecture and security boundaries.
+
 ## Postman collection
 
 Import both files from [`postman/`](./postman):
@@ -225,6 +258,8 @@ automatically. See [`postman/README.md`](./postman/README.md) for details.
   single-instance deployment. A shared store is required before scaling to
   multiple API instances.
 - Production deployments must use TLS and a secret manager.
+- Clipboard managers and other local applications may retain copied
+  credentials. Copying always requires a user action.
 
 ## Local backend development
 
@@ -246,6 +281,9 @@ npm --prefix backend run lint
 npm --prefix backend test
 npm --prefix backend run build
 npm --prefix packages/crypto test
+npm --prefix frontend test
+npm --prefix frontend run lint
+npm --prefix frontend run build
 ```
 
 ## Structure
@@ -271,6 +309,10 @@ npm --prefix packages/crypto test
 │   └── crypto/
 │       ├── src/
 │       └── README.md
+├── frontend/
+│   ├── src/
+│   ├── Dockerfile
+│   └── nginx.conf
 ├── postman/
 ├── .env.example
 ├── docker-compose.yml
