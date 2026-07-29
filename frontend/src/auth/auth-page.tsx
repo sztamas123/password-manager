@@ -164,7 +164,7 @@ export function AuthPage({ action }: { action: "login" | "register" }) {
           </form>
 
           <p className="auth-switch">
-            {isRegister ? "Already have an account?" : "New to Keynest?"}{" "}
+            {isRegister ? "Already have an account?" : "New to KeyNest?"}{" "}
             <Link to={isRegister ? "/login" : "/register"}>
               {isRegister ? "Sign in" : "Create an account"}
             </Link>

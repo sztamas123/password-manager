@@ -1,4 +1,4 @@
-import type { DecryptedEntry } from "../lib/types";
+import { type DecryptedEntry, isIdentityData } from "../lib/types";
 
 export function filterEntries(
   entries: DecryptedEntry[],
@@ -16,11 +16,30 @@ export function filterEntries(
       return true;
     }
 
-    return [
-      entry.data.name,
-      entry.data.username,
-      entry.data.url,
-      entry.data.notes,
-    ].some((value) => value.toLocaleLowerCase().includes(normalizedQuery));
+    const values = isIdentityData(entry.data)
+      ? [
+          entry.data.name,
+          entry.data.firstName,
+          entry.data.lastName,
+          entry.data.email,
+          entry.data.phone,
+          entry.data.country,
+          entry.data.addressLine1,
+          entry.data.addressLine2,
+          entry.data.region,
+          entry.data.city,
+          entry.data.postalCode,
+          entry.data.notes,
+        ]
+      : [
+          entry.data.name,
+          entry.data.username,
+          entry.data.url,
+          entry.data.notes,
+        ];
+
+    return values.some((value) =>
+      value.toLocaleLowerCase().includes(normalizedQuery),
+    );
   });
 }

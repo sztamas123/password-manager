@@ -1,11 +1,11 @@
-import { Copy, Eye, EyeOff, RefreshCw, Trash2 } from "lucide-react";
+import { Copy, Eye, EyeOff, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { Dialog } from "../components/dialog";
 import { Spinner } from "../components/spinner";
-import { generatePassword } from "../lib/password-generator";
-import type { DecryptedEntry, DecryptedFolder, EntryData } from "../lib/types";
+import type { DecryptedEntry, DecryptedFolder, LoginData } from "../lib/types";
 
-const EMPTY_ENTRY: EntryData = {
+const EMPTY_ENTRY: LoginData = {
+  type: "login",
   name: "",
   username: "",
   password: "",
@@ -20,24 +20,24 @@ export function EntryEditor({
   onDelete,
   onSave,
 }: {
-  entry: DecryptedEntry | null;
+  entry: DecryptedEntry<LoginData> | null;
   folders: DecryptedFolder[];
   onClose: () => void;
-  onDelete: (entry: DecryptedEntry) => void;
+  onDelete: (entry: DecryptedEntry<LoginData>) => void;
   onSave: (
-    data: EntryData,
+    data: LoginData,
     folderId: string | null,
     entryId?: string,
   ) => Promise<void>;
 }) {
-  const [data, setData] = useState<EntryData>(entry?.data ?? EMPTY_ENTRY);
+  const [data, setData] = useState<LoginData>(entry?.data ?? EMPTY_ENTRY);
   const [folderId, setFolderId] = useState(entry?.folderId ?? "");
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  function update(field: keyof EntryData, value: string) {
+  function update(field: keyof LoginData, value: string) {
     setData((current) => ({ ...current, [field]: value }));
   }
 
@@ -97,12 +97,12 @@ export function EntryEditor({
           </label>
 
           <label className="field">
-            <span>Username or email</span>
+            <span>Username or email (optional)</span>
             <input
               autoComplete="off"
               maxLength={1_000}
               onChange={(event) => update("username", event.target.value)}
-              placeholder="name@example.com"
+              placeholder="name@example.com or username"
               value={data.username}
             />
           </label>
@@ -125,30 +125,24 @@ export function EntryEditor({
           <label className="field field-span-two">
             <span>Password</span>
             <span className="password-input-group">
-              <input
-                autoComplete="new-password"
-                maxLength={4_096}
-                onChange={(event) => update("password", event.target.value)}
-                placeholder="Enter or generate a password"
-                type={showPassword ? "text" : "password"}
-                value={data.password}
-              />
-              <button
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="input-action"
-                onClick={() => setShowPassword((visible) => !visible)}
-                type="button"
-              >
-                {showPassword ? <EyeOff /> : <Eye />}
-              </button>
-              <button
-                className="field-tool"
-                onClick={() => update("password", generatePassword())}
-                type="button"
-              >
-                <RefreshCw size={15} />
-                Generate
-              </button>
+              <span className="password-input-wrap">
+                <input
+                  autoComplete="new-password"
+                  maxLength={4_096}
+                  onChange={(event) => update("password", event.target.value)}
+                  placeholder="Enter an existing password"
+                  type={showPassword ? "text" : "password"}
+                  value={data.password}
+                />
+                <button
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="input-action"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  type="button"
+                >
+                  {showPassword ? <EyeOff /> : <Eye />}
+                </button>
+              </span>
               <button
                 className="field-tool"
                 disabled={!data.password}

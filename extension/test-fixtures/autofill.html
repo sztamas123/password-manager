@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KeyNest autofill test</title>
+    <style>
+      :root {
+        color: #1b1d21;
+        background: #f2f3f7;
+        font-family: Inter, system-ui, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 48px 24px;
+      }
+
+      header {
+        margin-bottom: 32px;
+      }
+
+      h1,
+      h2 {
+        letter-spacing: -0.04em;
+      }
+
+      header p,
+      .expectation {
+        color: #6e7482;
+        line-height: 1.5;
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 18px;
+      }
+
+      form {
+        display: grid;
+        align-content: start;
+        gap: 14px;
+        padding: 24px;
+        background: white;
+        border: 1px solid #dde0eb;
+        border-radius: 16px;
+        box-shadow: 0 12px 32px rgb(42 49 91 / 7%);
+      }
+
+      form h2,
+      form p {
+        margin: 0;
+      }
+
+      label {
+        display: grid;
+        gap: 7px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      input {
+        width: 100%;
+        height: 46px;
+        padding: 0 13px;
+        border: 1px solid #cfd4e1;
+        border-radius: 10px;
+        font: inherit;
+      }
+
+      input:focus {
+        border-color: #6570cf;
+        outline: 3px solid rgb(101 112 207 / 12%);
+      }
+
+      .expectation {
+        padding: 8px 10px;
+        background: #f5f5fa;
+        border-radius: 8px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>KeyNest autofill test</h1>
+      <p>
+        Unlock the extension, then focus each field to verify its expected
+        behavior.
+      </p>
+    </header>
+
+    <main>
+      <form aria-label="Create account">
+        <h2>Registration</h2>
+        <p class="expectation">
+          Email suggestions should appear below the email field. The password
+          field should offer generation.
+        </p>
+        <label>
+          Email address
+          <input
+            id="signup-email"
+            type="email"
+            autocomplete="email"
+            placeholder="you@example.com"
+          />
+        </label>
+        <label>
+          Create password
+          <input type="password" autocomplete="new-password" />
+        </label>
+      </form>
+
+      <form aria-label="Contact us">
+        <h2>Standalone email</h2>
+        <p class="expectation">
+          Email-only suggestions should appear below this field.
+        </p>
+        <label>
+          Contact email
+          <input type="email" autocomplete="email" />
+        </label>
+      </form>
+
+      <form aria-label="Sign in">
+        <h2>Existing-account login</h2>
+        <p class="expectation">
+          Identity email suggestions should not appear here.
+        </p>
+        <label>
+          Email address
+          <input type="email" autocomplete="username" />
+        </label>
+        <label>
+          Password
+          <input type="password" autocomplete="current-password" />
+        </label>
+      </form>
+
+      <form aria-label="Two factor authentication">
+        <h2>Two-factor verification</h2>
+        <p class="expectation">
+          KeyNest should not offer identity or login autofill here.
+        </p>
+        <label>
+          Email verification code
+          <input
+            inputmode="numeric"
+            maxlength="6"
+            autocomplete="one-time-code"
+          />
+        </label>
+      </form>
+    </main>
+  </body>
+</html>

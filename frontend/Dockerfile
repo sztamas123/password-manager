@@ -7,10 +7,20 @@ COPY packages/crypto/tsconfig.json ./
 COPY packages/crypto/src ./src
 RUN npm run build
 
+FROM node:22-alpine AS generator-build
+
+WORKDIR /app/packages/password-generator
+COPY packages/password-generator/package.json packages/password-generator/package-lock.json ./
+RUN npm ci
+COPY packages/password-generator/tsconfig.json ./
+COPY packages/password-generator/src ./src
+RUN npm run build
+
 FROM node:22-alpine AS web-build
 
 WORKDIR /app
 COPY --from=crypto-build /app/packages/crypto ./packages/crypto
+COPY --from=generator-build /app/packages/password-generator ./packages/password-generator
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci

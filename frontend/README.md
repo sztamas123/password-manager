@@ -1,4 +1,4 @@
-# Frontend
+# KeyNest web client
 
 React, TypeScript, Tailwind CSS, and Vite client for the encrypted password
 manager.
@@ -30,7 +30,11 @@ docker compose up -d --build
 - `lib/api-client.ts` keeps access and rotating refresh tokens in memory and
   retries one request after a successful refresh.
 - `vault/` decrypts data only after unlock, searches decrypted data locally,
-  and encrypts every mutation before calling the API.
+  encrypts every mutation before calling the API, and owns the configurable
+  password-generator interface.
+- `lib/password-generator.ts` validates generator options, uses uniform
+  rejection sampling, and calculates entropy from the exact valid-password
+  space.
 - `@password-manager/crypto` owns Argon2id derivation and AES-256-GCM.
 
 Authentication tokens and the unwrapped vault key are never written to
@@ -45,8 +49,11 @@ page therefore requires signing in and unlocking again.
   policy allows `wasm-unsafe-eval` only because the established Argon2id
   library executes WebAssembly.
 - Only `http:` and `https:` website values are treated as safe external URLs.
-- Generated passwords use Nano ID's Web Crypto-backed secure and uniform
-  random generator.
+- Generated passwords use Nano ID's Web Crypto-backed random generator.
+  Rejection sampling guarantees that every enabled character type occurs while
+  keeping valid results uniformly distributed.
+- Generator output and configuration stay in component memory. Passwords are
+  not persisted or sent to the API by the generator.
 - Clipboard copies can be read by other local applications and clipboard
   managers. The app never copies a password without a user action.
 

@@ -20,10 +20,17 @@ import { Brand } from "../components/brand";
 import { ConfirmDialog } from "../components/confirm-dialog";
 import { NameDialog } from "../components/name-dialog";
 import { Spinner } from "../components/spinner";
-import type { DecryptedEntry } from "../lib/types";
+import {
+  type DecryptedEntry,
+  type IdentityData,
+  isIdentityEntry,
+  isLoginEntry,
+  type LoginData,
+} from "../lib/types";
 import { EntryCard } from "./entry-card";
 import { EntryEditor } from "./entry-editor";
 import { GeneratorDialog } from "./generator-dialog";
+import { IdentityEditor } from "./identity-editor";
 import { filterEntries } from "./search";
 import { useVaultData } from "./use-vault-data";
 
@@ -33,14 +40,18 @@ type NameDialogState =
   | { type: "create-folder" }
   | null;
 
+type EditorState =
+  | { type: "login"; entry: DecryptedEntry<LoginData> | null }
+  | { type: "identity"; entry: DecryptedEntry<IdentityData> | null }
+  | null;
+
 export function VaultPage() {
   const { lock, logout, user } = useAuth();
   const vault = useVaultData();
   const [query, setQuery] = useState("");
   const [folderId, setFolderId] = useState<string | null>(null);
   const [nameDialog, setNameDialog] = useState<NameDialogState>(null);
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<DecryptedEntry | null>(null);
+  const [editor, setEditor] = useState<EditorState>(null);
   const [deletingEntry, setDeletingEntry] = useState<DecryptedEntry | null>(
     null,
   );
@@ -62,14 +73,20 @@ export function VaultPage() {
     [vault.entries, query, activeFolderId],
   );
 
-  function openNewEntry() {
-    setEditingEntry(null);
-    setEditorOpen(true);
+  function openNewLogin() {
+    setEditor({ type: "login", entry: null });
+  }
+
+  function openNewIdentity() {
+    setEditor({ type: "identity", entry: null });
   }
 
   function openEntry(entry: DecryptedEntry) {
-    setEditingEntry(entry);
-    setEditorOpen(true);
+    if (isIdentityEntry(entry)) {
+      setEditor({ type: "identity", entry });
+    } else if (isLoginEntry(entry)) {
+      setEditor({ type: "login", entry });
+    }
   }
 
   if (vault.loading && vault.vaults.length === 0) {
@@ -243,9 +260,18 @@ export function VaultPage() {
               Generator
             </button>
             <button
+              className="button button-secondary"
+              disabled={!selectedVault}
+              onClick={openNewIdentity}
+              type="button"
+            >
+              <UserRound size={17} />
+              New identity
+            </button>
+            <button
               className="button button-primary"
               disabled={!selectedVault}
-              onClick={openNewEntry}
+              onClick={openNewLogin}
               type="button"
             >
               <Plus size={18} />
@@ -289,7 +315,7 @@ export function VaultPage() {
                     {selectedVault.data.name} ·{" "}
                     {selectedFolder?.data.name ?? "All items"}
                   </p>
-                  <h1>{selectedFolder?.data.name ?? "Your logins"}</h1>
+                  <h1>{selectedFolder?.data.name ?? "Your items"}</h1>
                   <p>
                     {visibleEntries.length}{" "}
                     {visibleEntries.length === 1 ? "item" : "items"}
@@ -321,16 +347,16 @@ export function VaultPage() {
                   <span className="empty-icon empty-icon-small">
                     {query ? <Search /> : <KeyRound />}
                   </span>
-                  <h2>{query ? "No matches found" : "No logins here yet"}</h2>
+                  <h2>{query ? "No matches found" : "No items here yet"}</h2>
                   <p>
                     {query
                       ? "Try a different name, username, website, or note."
-                      : "Add your first login. It will be encrypted before it leaves this browser."}
+                      : "Add a login or identity. It will be encrypted before it leaves this browser."}
                   </p>
                   {!query && (
                     <button
                       className="button button-primary"
-                      onClick={openNewEntry}
+                      onClick={openNewLogin}
                       type="button"
                     >
                       <Plus size={18} />
@@ -369,14 +395,27 @@ export function VaultPage() {
           title="Create folder"
         />
       )}
-      {editorOpen && (
+      {editor?.type === "login" && (
         <EntryEditor
-          entry={editingEntry}
+          entry={editor.entry}
           folders={vault.folders}
-          key={editingEntry?.id ?? "new-entry"}
-          onClose={() => setEditorOpen(false)}
+          key={editor.entry?.id ?? "new-entry"}
+          onClose={() => setEditor(null)}
           onDelete={(entry) => {
-            setEditorOpen(false);
+            setEditor(null);
+            setDeletingEntry(entry);
+          }}
+          onSave={vault.saveEntry}
+        />
+      )}
+      {editor?.type === "identity" && (
+        <IdentityEditor
+          entry={editor.entry}
+          folders={vault.folders}
+          key={editor.entry?.id ?? "new-identity"}
+          onClose={() => setEditor(null)}
+          onDelete={(entry) => {
+            setEditor(null);
             setDeletingEntry(entry);
           }}
           onSave={vault.saveEntry}
@@ -387,12 +426,16 @@ export function VaultPage() {
           description={`“${deletingEntry.data.name}” will be permanently removed from this vault.`}
           onClose={() => setDeletingEntry(null)}
           onConfirm={() => vault.deleteEntry(deletingEntry.id)}
-          title="Delete login?"
+          title={
+            isIdentityEntry(deletingEntry)
+              ? "Delete identity?"
+              : "Delete login?"
+          }
         />
       )}
       {deleteVaultOpen && selectedVault && (
         <ConfirmDialog
-          description={`“${selectedVault.data.name}” and all of its folders and logins will be permanently deleted.`}
+          description={`“${selectedVault.data.name}” and all of its folders and items will be permanently deleted.`}
           onClose={() => setDeleteVaultOpen(false)}
           onConfirm={() => vault.deleteVault(selectedVault.id)}
           title="Delete vault?"

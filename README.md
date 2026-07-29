@@ -1,6 +1,4 @@
-# Password Manager
-
-
+# KeyNest
 
 ## Implemented
 
@@ -20,15 +18,18 @@ The backend currently includes:
   random vault key;
 - a responsive React and Tailwind web client with login, registration,
   master-password setup/unlock, encrypted vault CRUD, local search, and a
-  secure password generator;
+  secure password generator and encrypted identity items;
+- a Chrome/Edge Manifest V3 extension with form detection, explicit autofill,
+  registration-time password generation, checkout identity autofill, and
+  one-click encrypted Save or Update prompts;
 - same-origin API proxying and production browser security headers;
 - Docker images for the web client, API, and PostgreSQL;
 - unit tests, linting, and formatting.
 
 The API and PostgreSQL never receive vault names, usernames, passwords, URLs,
-notes, the master password, or unwrapped encryption keys. They store opaque
-authenticated ciphertext and the metadata needed to organize and synchronize
-it.
+identity details, notes, the master password, or unwrapped encryption keys.
+They store opaque authenticated ciphertext and the metadata needed to organize
+and synchronize it.
 
 ## Start with Docker
 
@@ -187,7 +188,7 @@ npm --prefix packages/crypto test
 
 ## Web client
 
-The Phase 5 frontend lives in [`frontend/`](./frontend). It provides:
+The web frontend lives in [`frontend/`](./frontend). It provides:
 
 - registration and login;
 - separate master-password setup and unlock;
@@ -195,12 +196,19 @@ The Phase 5 frontend lives in [`frontend/`](./frontend). It provides:
 - folder creation and filtering;
 - encrypted login creation, editing, copying, and deletion;
 - local search over decrypted names, usernames, websites, and notes;
-- a fixed-strength password generator.
+- a configurable password generator with length, character-type, and entropy
+  controls.
 
 The frontend keeps authentication tokens and the unwrapped vault key only in
 memory. A page reload signs the user out by design. During local development,
 Vite proxies `/api` to the backend. The Docker deployment uses an Nginx
 same-origin proxy and does not require permissive CORS.
+
+The password generator runs entirely in the browser. It supports lengths from
+8 to 128 characters and independently configurable uppercase, lowercase,
+number, and symbol sets. Every enabled character type appears at least once.
+The displayed entropy is calculated from the number of passwords that satisfy
+the selected rules.
 
 Run it outside Docker:
 
@@ -212,6 +220,25 @@ npm --prefix frontend run dev
 
 Open <http://localhost:5173>. See [`frontend/README.md`](./frontend/README.md)
 for the architecture and security boundaries.
+
+## Browser extension
+
+The Phase 7 extension lives in [`extension/`](./extension). It uses the same
+client-side encryption and password-generator packages as the web application.
+The extension automatically derives the current website and item name, uses
+the last-used or first vault, and saves new entries without a folder. Users
+only confirm **Save** or **Update**.
+
+Build it and load the generated directory as an unpacked extension:
+
+```bash
+npm --prefix extension install
+npm --prefix extension run build
+```
+
+Load `extension/.output/chrome-mv3` from `chrome://extensions` with Developer
+mode enabled. See [`extension/README.md`](./extension/README.md) for server
+configuration, architecture, testing, and security boundaries.
 
 ## Postman collection
 

@@ -1,15 +1,11 @@
-import { customAlphabet } from "nanoid";
-
-export const GENERATED_PASSWORD_LENGTH = 20;
-
-const PASSWORD_ALPHABET =
-  "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*()-_=+";
-
-const createPassword = customAlphabet(
-  PASSWORD_ALPHABET,
+export {
+  calculatePasswordEntropy,
+  DEFAULT_PASSWORD_OPTIONS,
   GENERATED_PASSWORD_LENGTH,
-);
-
-export function generatePassword(): string {
-  return createPassword();
-}
+  generatePassword,
+  getPasswordStrength,
+  MAX_PASSWORD_LENGTH,
+  MIN_PASSWORD_LENGTH,
+  type PasswordGeneratorOptions,
+  type PasswordStrength,
+} from "@password-manager/password-generator";

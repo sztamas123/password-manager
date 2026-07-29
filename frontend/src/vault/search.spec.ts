@@ -17,6 +17,21 @@ const entries: DecryptedEntry[] = [
     url: "https://host.example.net",
     notes: "",
   }),
+  createEntry("home", null, {
+    type: "identity",
+    name: "Home address",
+    firstName: "Tamas",
+    lastName: "Szalma",
+    email: "identity@example.org",
+    phone: "+40 700 000 000",
+    country: "Romania",
+    addressLine1: "Example Street",
+    addressLine2: "",
+    region: "Bucuresti",
+    city: "Bucharest",
+    postalCode: "010101",
+    notes: "",
+  }),
 ];
 
 describe("filterEntries", () => {
@@ -33,6 +48,15 @@ describe("filterEntries", () => {
     expect(
       filterEntries(entries, "example", "folder-one").map(({ id }) => id),
     ).toEqual(["email"]);
+  });
+
+  it("searches identity contact and address fields", () => {
+    expect(
+      filterEntries(entries, "identity@example.org", null).map(({ id }) => id),
+    ).toEqual(["home"]);
+    expect(
+      filterEntries(entries, "Bucharest", null).map(({ id }) => id),
+    ).toEqual(["home"]);
   });
 });
 

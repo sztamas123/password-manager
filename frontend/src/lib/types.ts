@@ -52,13 +52,32 @@ export interface FolderData {
   name: string;
 }
 
-export interface EntryData {
+export interface LoginData {
+  type?: "login";
   name: string;
   username: string;
   password: string;
   url: string;
   notes: string;
 }
+
+export interface IdentityData {
+  type: "identity";
+  name: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  country: string;
+  addressLine1: string;
+  addressLine2: string;
+  region: string;
+  city: string;
+  postalCode: string;
+  notes: string;
+}
+
+export type EntryData = LoginData | IdentityData;
 
 export interface DecryptedVault extends StoredVault {
   data: VaultData;
@@ -68,6 +87,24 @@ export interface DecryptedFolder extends StoredFolder {
   data: FolderData;
 }
 
-export interface DecryptedEntry extends StoredEntry {
-  data: EntryData;
+export interface DecryptedEntry<
+  T extends EntryData = EntryData,
+> extends StoredEntry {
+  data: T;
+}
+
+export function isIdentityData(data: EntryData): data is IdentityData {
+  return data.type === "identity";
+}
+
+export function isIdentityEntry(
+  entry: DecryptedEntry,
+): entry is DecryptedEntry<IdentityData> {
+  return isIdentityData(entry.data);
+}
+
+export function isLoginEntry(
+  entry: DecryptedEntry,
+): entry is DecryptedEntry<LoginData> {
+  return !isIdentityData(entry.data);
 }
